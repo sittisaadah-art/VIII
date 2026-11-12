@@ -1,0 +1,2120 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Edublox City By Sitty - Informatika Kelas VIII</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Three.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <style>
+        * {
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            font-family: 'Nunito', sans-serif;
+        }
+        h1, h2, h3, h4, .font-heading {
+            font-family: 'Fredoka', cursive, sans-serif;
+        }
+
+        /* Custom 3D Button Shadows */
+        .btn-blox {
+            transition: all 0.1s ease;
+            box-shadow: 0 6px 0 rgba(0,0,0,0.25);
+            position: relative;
+            top: 0;
+        }
+        .btn-blox:active {
+            top: 4px;
+            box-shadow: 0 2px 0 rgba(0,0,0,0.25);
+        }
+        .btn-blox-red { background-color: #ef4444; border-bottom: 4px solid #b91c1c; color: white; }
+        .btn-blox-green { background-color: #10b981; border-bottom: 4px solid #047857; color: white; }
+        .btn-blox-blue { background-color: #3b82f6; border-bottom: 4px solid #1d4ed8; color: white; }
+        .btn-blox-yellow { background-color: #f59e0b; border-bottom: 4px solid #b45309; color: white; }
+        .btn-blox-purple { background-color: #8b5cf6; border-bottom: 4px solid #6d28d9; color: white; }
+        .btn-blox-pink { background-color: #ec4899; border-bottom: 4px solid #be185d; color: white; }
+
+        /* Overhead HTML Name Tags */
+        .overhead-tag {
+            position: absolute;
+            transform: translate(-50%, -100%);
+            pointer-events: none;
+            transition: transform 0.05s ease-out;
+            white-space: nowrap;
+            z-index: 10;
+        }
+
+        /* Canvas Fullscreen */
+        #game-container {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+        #three-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* 4-Way Split Screen Grid */
+        .split-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+        .split-viewport {
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            box-sizing: border-box;
+            position: relative;
+            pointer-events: auto;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 8px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-800 overflow-hidden select-none">
+
+    <!-- MAIN GAME CONTAINER -->
+    <div id="game-container">
+        <!-- 3D Canvas -->
+        <canvas id="three-canvas"></canvas>
+
+        <!-- OVERHEAD PLAYER TAGS CONTAINER -->
+        <div id="overhead-tags-container" class="absolute inset-0 pointer-events-none z-10 overflow-hidden"></div>
+
+        <!-- SPLIT SCREEN OVERLAY (Hidden by default) -->
+        <div id="split-screen-overlay" class="split-grid hidden">
+            <div id="viewport-p1" class="split-viewport">
+                <span class="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow">P1 View</span>
+            </div>
+            <div id="viewport-p2" class="split-viewport">
+                <span class="absolute top-2 left-2 bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow">P2 View</span>
+            </div>
+            <div id="viewport-p3" class="split-viewport">
+                <span class="absolute top-2 left-2 bg-emerald-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow">P3 View</span>
+            </div>
+            <div id="viewport-p4" class="split-viewport">
+                <span class="absolute top-2 left-2 bg-amber-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow">P4 View</span>
+            </div>
+        </div>
+
+        <!-- HUD HEADER ATAS -->
+        <div class="absolute top-3 left-3 right-3 flex justify-between items-start pointer-events-auto z-20 flex-wrap gap-2">
+            <!-- Branding HUD -->
+            <div class="bg-white/90 backdrop-blur-md px-4 py-2 rounded-2xl shadow-xl border-2 border-amber-400 flex items-center gap-3">
+                <div class="w-10 h-10 bg-gradient-to-tr from-amber-400 to-yellow-300 rounded-xl flex items-center justify-center text-white shadow-inner text-xl">
+                    <i class="fa-solid font-bold fa-cube"></i>
+                </div>
+                <div>
+                    <h1 class="font-heading text-lg font-bold text-slate-800 leading-none">Edublox City <span class="text-xs text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded-md">By Sitty</span></h1>
+                    <p id="hud-school-title" class="text-xs font-semibold text-slate-500 mt-0.5">Informatika Kelas VIII</p>
+                </div>
+            </div>
+
+            <!-- Kamera & Quick Actions HUD -->
+            <div class="flex items-center gap-2 flex-wrap">
+                <!-- Navigation Orbit Controls -->
+                <div class="bg-white/90 backdrop-blur-md p-1.5 rounded-2xl shadow-xl border border-slate-200 flex items-center gap-1 text-slate-700 text-sm">
+                    <button onclick="rotateCamera(-0.2)" class="w-9 h-9 rounded-xl hover:bg-slate-100 flex items-center justify-center font-bold btn-blox bg-slate-50" title="Putar Kiri"><i class="fa-solid fa-rotate-left"></i></button>
+                    <button onclick="rotateCamera(0.2)" class="w-9 h-9 rounded-xl hover:bg-slate-100 flex items-center justify-center font-bold btn-blox bg-slate-50" title="Putar Kanan"><i class="fa-solid fa-rotate-right"></i></button>
+                    <button id="btn-auto-orbit" onclick="toggleAutoOrbit()" class="px-3 h-9 rounded-xl hover:bg-slate-100 flex items-center gap-1 font-bold btn-blox bg-slate-50 text-xs"><i class="fa-solid fa-arrows-spin"></i> 360° View</button>
+                    <button onclick="zoomCamera(-5)" class="w-9 h-9 rounded-xl hover:bg-slate-100 flex items-center justify-center font-bold btn-blox bg-slate-50" title="Zoom In"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+                    <button onclick="zoomCamera(5)" class="w-9 h-9 rounded-xl hover:bg-slate-100 flex items-center justify-center font-bold btn-blox bg-slate-50" title="Zoom Out"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+                </div>
+
+                <!-- Toggle Split Screen & Action Buttons -->
+                <button id="btn-split-toggle" onclick="toggleSplitScreen()" class="btn-blox btn-blox-purple text-white px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-lg">
+                    <i class="fa-solid fa-border-all"></i> Layar Bagi 4: <span id="split-status-text">OFF</span>
+                </button>
+                <button onclick="openQuizModal(currentQuizBuilding || 'A')" class="btn-blox btn-blox-yellow text-white px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-lg animate-bounce">
+                    <i class="fa-solid fa-brain"></i> Kuis Serentak!
+                </button>
+                <button onclick="openCanteenModal()" class="btn-blox btn-blox-pink text-white px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-lg">
+                    <i class="fa-solid fa-utensils"></i> Kantin Jajan
+                </button>
+                <button onclick="openBuilderModal()" class="btn-blox btn-blox-green text-white px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-lg">
+                    <i class="fa-solid fa-hammer"></i> + Ornamen & Literasi
+                </button>
+                <button onclick="openTeacherModal()" class="btn-blox btn-blox-blue text-white px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-lg">
+                    <i class="fa-solid fa-chalkboard-user"></i> Custom & AI Soal
+                </button>
+                <button onclick="openRecapModal()" class="btn-blox bg-amber-500 text-white px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-lg border-b-4 border-amber-700">
+                    <i class="fa-solid fa-file-spreadsheet"></i> Rekap Spreadsheet
+                </button>
+                <button id="btn-sound-toggle" onclick="toggleAudio()" class="w-10 h-10 rounded-xl bg-white/90 backdrop-blur-md shadow-xl border border-slate-200 text-slate-700 flex items-center justify-center font-bold text-sm">
+                    <i class="fa-solid fa-volume-high"></i>
+                </button>
+                <button onclick="openMainMenu()" class="w-10 h-10 rounded-xl bg-slate-800 text-white shadow-xl flex items-center justify-center font-bold text-sm hover:bg-slate-700" title="Menu Utama">
+                    <i class="fa-solid fa-gear"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- CAMERA FOCUS SELECTOR BAR -->
+        <div class="absolute top-16 left-3 pointer-events-auto z-20 flex items-center gap-1.5 bg-white/80 backdrop-blur-md p-1.5 rounded-xl border border-slate-200 shadow-md text-xs">
+            <span class="font-bold text-slate-500 px-1"><i class="fa-solid fa-eye"></i> Fokus:</span>
+            <button onclick="setCameraFocus('ALL')" class="px-2 py-1 rounded-lg bg-slate-700 text-white font-bold hover:bg-slate-600">Semua</button>
+            <button onclick="setCameraFocus(0)" class="px-2 py-1 rounded-lg bg-red-500 text-white font-bold hover:bg-red-600">P1</button>
+            <button onclick="setCameraFocus(1)" class="px-2 py-1 rounded-lg bg-blue-500 text-white font-bold hover:bg-blue-600">P2</button>
+            <button onclick="setCameraFocus(2)" class="px-2 py-1 rounded-lg bg-emerald-500 text-white font-bold hover:bg-emerald-600">P3</button>
+            <button onclick="setCameraFocus(3)" class="px-2 py-1 rounded-lg bg-amber-500 text-white font-bold hover:bg-amber-600">P4</button>
+        </div>
+
+        <!-- DOCK KENDALI MULTI-PEMAIN BOTTOM HUD -->
+        <div class="absolute bottom-3 left-3 right-3 pointer-events-none z-20 flex justify-between items-end gap-2 flex-wrap-reverse">
+            <!-- Multi-Player Control Cards Container -->
+            <div id="player-docks-container" class="flex items-center gap-2 pointer-events-auto flex-wrap max-w-full">
+                <!-- Dynamically generated player dock cards -->
+            </div>
+
+            <!-- Mini Guide / Instructions -->
+            <div class="bg-slate-900/80 backdrop-blur-md text-white text-xs px-3 py-2 rounded-xl pointer-events-auto border border-slate-700 max-w-xs shadow-xl hidden md:block">
+                <p class="font-bold text-amber-400"><i class="fa-solid fa-keyboard"></i> Kontrol Keyboard:</p>
+                <p class="mt-0.5 text-slate-300">P1: WASD+Space | P2: Panah+Shift | P3: IJKL+O | P4: TFGH+Y</p>
+                <p class="text-[10px] text-slate-400 mt-1">Dekati pintu Gedung A-E untuk memicu Kuis Serentak!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 1: MENU UTAMA & KUSTOMISASI KELAS / PEMAIN -->
+    <div id="modal-main-menu" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border-4 border-amber-400 p-6 flex flex-col gap-6">
+            <div class="text-center border-b pb-4">
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-tr from-amber-400 to-yellow-300 rounded-2xl text-white text-3xl shadow-lg mb-2">
+                    <i class="fa-solid fa-cube"></i>
+                </div>
+                <h2 class="font-heading text-3xl font-bold text-slate-800">Edublox City <span class="text-sm font-normal text-amber-600 bg-amber-100 px-2 py-0.5 rounded-lg">By Sitty</span></h2>
+                <p class="text-sm font-semibold text-slate-500 mt-1">Game Edukasi 3D Informatika Kelas XI (Algoritma Adventure)</p>
+            </div>
+
+            <!-- Pengaturan Instansi/Kelas -->
+            <div class="bg-amber-50 p-4 rounded-2xl border border-amber-200">
+                <h3 class="font-heading text-lg font-bold text-amber-800 flex items-center gap-2"><i class="fa-solid fa-school"></i> Pengaturan Kelas & Arena 3D</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
+                    <div>
+                        <label class="text-xs font-bold text-slate-600 block">Nama Kelas / Instansi:</label>
+                        <input type="text" id="input-school-name" value="Informatika Kelas VIII" class="w-full mt-1 px-3 py-2 bg-white rounded-xl border border-amber-300 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-600 block">Judul Arena 3D Kota:</label>
+                        <input type="text" id="input-arena-title" value="Kota Algoritma Edublox" class="w-full mt-1 px-3 py-2 bg-white rounded-xl border border-amber-300 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Daftar Kustomisasi Pemain -->
+            <div>
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="font-heading text-lg font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-users text-amber-500"></i> Skuad Pemain Co-op</h3>
+                    <button onclick="addNewPlayerConfig()" class="btn-blox btn-blox-green text-xs px-3 py-1.5 rounded-xl font-bold flex items-center gap-1">
+                        <i class="fa-solid fa-plus"></i> Tambah Pemain
+                    </button>
+                </div>
+                <div id="player-setup-list" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <!-- Config player item rendered by JS -->
+                </div>
+            </div>
+
+            <!-- Tombol Mulai Game -->
+            <div class="flex justify-end gap-3 border-t pt-4">
+                <button onclick="saveMenuConfigAndPlay()" class="btn-blox btn-blox-yellow text-white text-base px-8 py-3 rounded-2xl font-bold shadow-xl flex items-center gap-2 w-full justify-center">
+                    <i class="fa-solid fa-play text-xl"></i> MASUK KE KOTA 3D EDUBLOX
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: KUIS SERENTAK ALL PLAYERS -->
+    <div id="modal-quiz" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-4xl w-full max-h-[95vh] overflow-y-auto shadow-2xl border-4 border-amber-400 p-6 flex flex-col gap-4">
+            <!-- Quiz Header -->
+            <div class="flex justify-between items-center border-b pb-3">
+                <div class="flex items-center gap-3">
+                    <div id="quiz-building-badge" class="w-12 h-12 bg-pink-500 text-white rounded-2xl flex items-center justify-center text-2xl font-bold shadow-lg">
+                        🧠
+                    </div>
+                    <div>
+                        <h3 id="quiz-building-name" class="font-heading text-xl font-bold text-slate-800">Gedung A - Konsep Algoritma</h3>
+                        <p class="text-xs text-slate-500 font-semibold">Kuis Serentak Informatika Kelas XI • Soal <span id="quiz-current-idx">1</span> dari <span id="quiz-total-idx">5</span></p>
+                    </div>
+                </div>
+                <button onclick="closeQuizModal()" class="text-slate-400 hover:text-slate-600 text-2xl font-bold px-2">&times;</button>
+            </div>
+
+            <!-- Pertanyaan Soal Card -->
+            <div class="bg-amber-50 p-5 rounded-2xl border-2 border-amber-200">
+                <span class="bg-amber-200 text-amber-900 text-xs font-bold px-2.5 py-1 rounded-lg">PERTANYAAN</span>
+                <p id="quiz-question-text" class="text-base font-bold text-slate-800 mt-2 leading-relaxed">Loading pertanyaan...</p>
+            </div>
+
+            <!-- Panel Jawaban per Pemain (P1, P2, P3, P4) -->
+            <div id="quiz-players-options" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Dynamically rendered per active player -->
+            </div>
+
+            <!-- Action & Discussion Box -->
+            <div id="quiz-feedback-box" class="bg-slate-100 p-4 rounded-2xl border text-sm text-slate-700 hidden">
+                <p class="font-bold text-slate-800 flex items-center gap-1.5"><i class="fa-solid fa-lightbulb text-yellow-500"></i> Kunci & Pembahasan:</p>
+                <p id="quiz-answer-key" class="font-bold text-emerald-600 mt-1"></p>
+                <p id="quiz-explanation-text" class="text-slate-600 mt-1 italic"></p>
+            </div>
+
+            <div class="flex justify-between items-center border-t pt-3 flex-wrap gap-2">
+                <button onclick="prevQuizQuestion()" class="btn-blox bg-slate-200 text-slate-700 px-4 py-2 rounded-xl text-xs font-bold"><i class="fa-solid fa-arrow-left"></i> Soal Sebelumnya</button>
+                <div class="flex items-center gap-2">
+                    <button onclick="verifyAllPlayerAnswers(false)" class="btn-blox btn-blox-blue text-white px-5 py-2.5 rounded-xl text-xs font-bold"><i class="fa-solid fa-circle-check"></i> Periksa Jawaban Semua Pemain</button>
+                    <button onclick="nextQuizQuestion()" class="btn-blox btn-blox-green text-white px-5 py-2.5 rounded-xl text-xs font-bold">Soal Berikutnya <i class="fa-solid fa-arrow-right"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: KANTIN JAJANAN & REST AREA -->
+    <div id="modal-canteen" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border-4 border-pink-400 p-6 flex flex-col gap-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-heading text-xl font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-store text-pink-500"></i> Kantin Jajanan Edublox</h3>
+                <button onclick="closeCanteenModal()" class="text-slate-400 hover:text-slate-600 text-2xl font-bold px-2">&times;</button>
+            </div>
+            <p class="text-xs text-slate-500 font-semibold">Tukarkan Koin Kuis hasil kerja keras skuadmu dengan jajanan lezat untuk bonus XP & Kebahagiaan Karakter!</p>
+            <div id="canteen-items-grid" class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <!-- Canteen items JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 4: BUILDER ORNAMEN 3D & POJOK LITERASI -->
+    <div id="modal-builder" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border-4 border-emerald-400 p-6 flex flex-col gap-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-heading text-xl font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-hammer text-emerald-500"></i> Builder Ornamen & Gazebo Literasi 3D</h3>
+                <button onclick="closeBuilderModal()" class="text-slate-400 hover:text-slate-600 text-2xl font-bold px-2">&times;</button>
+            </div>
+
+            <!-- Target Penempatan -->
+            <div class="bg-emerald-50 p-3 rounded-2xl border border-emerald-200">
+                <label class="text-xs font-bold text-emerald-900 block mb-1"><i class="fa-solid fa-location-dot"></i> Metode / Lokasi Penempatan:</label>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
+                    <label class="flex items-center gap-2 bg-white p-2 rounded-xl border cursor-pointer font-bold">
+                        <input type="radio" name="build-mode" value="CLICK" checked> Klik Langsung di Arena 3D
+                    </label>
+                    <label class="flex items-center gap-2 bg-white p-2 rounded-xl border cursor-pointer font-bold">
+                        <input type="radio" name="build-mode" value="ZONE"> Zona Taman Kota
+                    </label>
+                    <label class="flex items-center gap-2 bg-white p-2 rounded-xl border cursor-pointer font-bold">
+                        <input type="radio" name="build-mode" value="COORD"> Input Koordinat (X, Z)
+                    </label>
+                </div>
+                <div id="build-zone-select" class="mt-2 hidden">
+                    <select id="select-zone" class="w-full text-xs font-bold p-2 bg-white border rounded-xl">
+                        <option value="UTARA">Taman Utara Kota (Dekat Monumen)</option>
+                        <option value="SELATAN">Taman Selatan Kota</option>
+                        <option value="TIMUR">Taman Timur Kota</option>
+                        <option value="BARAT">Taman Barat Kota</option>
+                        <option value="KARAKTER">Tepat Di Samping Karakter P1</option>
+                    </select>
+                </div>
+                <div id="build-coord-inputs" class="mt-2 grid grid-cols-2 gap-2 hidden">
+                    <input type="number" id="input-coord-x" placeholder="Koordinat X (-120 s.d 120)" class="text-xs font-bold p-2 bg-white border rounded-xl">
+                    <input type="number" id="input-coord-z" placeholder="Koordinat Z (-120 s.d 120)" class="text-xs font-bold p-2 bg-white border rounded-xl">
+                </div>
+            </div>
+
+            <!-- Custom Content Literasi -->
+            <div class="bg-slate-50 p-3 rounded-2xl border">
+                <label class="text-xs font-bold text-slate-700 block"><i class="fa-solid fa-quote-left"></i> Pesan / Teks Literasi (Untuk Gazebo & Mading):</label>
+                <input type="text" id="input-literacy-quote" value="Berpikir Komputasional & Algoritma adalah kunci memecahkan masalah masa depan!" class="w-full text-xs font-bold p-2.5 bg-white border rounded-xl mt-1">
+            </div>
+
+            <!-- Katalog Ornamen -->
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-3" id="builder-catalog-grid">
+                <!-- Ornaments catalog rendered by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 5: PANEL CUSTOM GURU & AI GENERATOR SOAL -->
+    <div id="modal-teacher" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-4xl w-full max-h-[92vh] overflow-y-auto shadow-2xl border-4 border-blue-400 p-6 flex flex-col gap-5">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-heading text-xl font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-chalkboard-user text-blue-500"></i> Panel Guru: Custom Gedung & AI Generator Soal</h3>
+                <button onclick="closeTeacherModal()" class="text-slate-400 hover:text-slate-600 text-2xl font-bold px-2">&times;</button>
+            </div>
+
+            <!-- AI Generator Box -->
+            <div class="bg-gradient-to-r from-blue-900 to-indigo-900 text-white p-5 rounded-3xl shadow-lg border-2 border-blue-400">
+                <div class="flex items-center gap-2 font-heading text-lg font-bold text-amber-300">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> AI Generator Soal Otomatis (Gemini 3 Flash API)
+                </div>
+                <p class="text-xs text-blue-200 mt-1">Buat soal Informatika Kelas XI secara otomatis sesuai standar Kurikulum Merdeka (Bab Algoritma, Flowchart, Tracing, Pseudocode, & Pemrosesan Bahasa Pemrograman).</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
+                    <div class="md:col-span-2">
+                        <label class="text-[11px] font-bold text-blue-300 block">Topik / Perintah AI:</label>
+                        <input type="text" id="ai-prompt-input" value="Buat soal pilihan ganda Informatika kelas XI tentang penelusuran (tracing) algoritma dan diagram alir (flowchart)" class="w-full text-xs bg-slate-800 border border-blue-500 p-2.5 rounded-xl font-bold text-white mt-1 focus:ring-2 focus:ring-amber-400">
+                    </div>
+                    <div>
+                        <label class="text-[11px] font-bold text-blue-300 block">Gedung Target AI:</label>
+                        <select id="ai-target-building" class="w-full text-xs bg-slate-800 border border-blue-500 p-2.5 rounded-xl font-bold text-white mt-1">
+                            <option value="A">Gedung A - Konsep Algoritma</option>
+                            <option value="B">Gedung B - Diagram Alir</option>
+                            <option value="C">Gedung C - Tracing Algoritma</option>
+                            <option value="D">Gedung D - Pseudocode</option>
+                            <option value="E">Gedung E - Pemrosesan Bahasa</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center mt-3 pt-2 border-t border-blue-700/60 flex-wrap gap-2">
+                    <div class="flex items-center gap-3 text-xs">
+                        <label class="flex items-center gap-1"><input type="radio" name="ai-mode" value="replace" checked> Ganti Soal Lama</label>
+                        <label class="flex items-center gap-1"><input type="radio" name="ai-mode" value="append"> Tambahkan ke Soal</label>
+                    </div>
+                    <button id="btn-generate-ai" onclick="generateQuestionsWithAI()" class="btn-blox btn-blox-yellow text-slate-900 px-5 py-2 rounded-xl text-xs font-bold flex items-center gap-2">
+                        <i class="fa-solid fa-microchip"></i> Buat Soal Dengan AI Sekarang
+                    </button>
+                </div>
+            </div>
+
+            <!-- Fitur Tambah & Kelola Gedung -->
+            <div>
+                <div class="flex justify-between items-center mb-3">
+                    <h4 class="font-heading text-lg font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-building text-blue-500"></i> Kelola Gedung & Papan Nama 3D</h4>
+                    <button onclick="addNewCustomBuilding()" class="btn-blox btn-blox-green text-xs px-3 py-1.5 rounded-xl font-bold flex items-center gap-1">
+                        <i class="fa-solid fa-plus"></i> + Tambah Gedung Baru (F, G...)
+                    </button>
+                </div>
+                <div id="teacher-buildings-list" class="space-y-4">
+                    <!-- Dynamic Building Cards -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 6: REKAP NILAI MURID & EKSPOR SPREADSHEET -->
+    <div id="modal-recap" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-4xl w-full max-h-[92vh] overflow-y-auto shadow-2xl border-4 border-amber-400 p-6 flex flex-col gap-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-heading text-xl font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-file-spreadsheet text-emerald-600"></i> Rekap Nilai Murid & Ekspor Spreadsheet</h3>
+                <button onclick="closeRecapModal()" class="text-slate-400 hover:text-slate-600 text-2xl font-bold px-2">&times;</button>
+            </div>
+
+            <!-- Ringkasan Statistik -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div class="bg-blue-50 p-3 rounded-2xl border border-blue-200 text-center">
+                    <p class="text-[10px] font-bold text-blue-600 uppercase">Total Aktivitas</p>
+                    <p id="recap-stat-total" class="font-heading text-2xl font-bold text-blue-900">0</p>
+                </div>
+                <div class="bg-emerald-50 p-3 rounded-2xl border border-emerald-200 text-center">
+                    <p class="text-[10px] font-bold text-emerald-600 uppercase">Jawaban Benar</p>
+                    <p id="recap-stat-correct" class="font-heading text-2xl font-bold text-emerald-900">0</p>
+                </div>
+                <div class="bg-amber-50 p-3 rounded-2xl border border-amber-200 text-center">
+                    <p class="text-[10px] font-bold text-amber-600 uppercase">Rata-Rata Akurasi</p>
+                    <p id="recap-stat-accuracy" class="font-heading text-2xl font-bold text-amber-900">0%</p>
+                </div>
+                <div class="bg-purple-50 p-3 rounded-2xl border border-purple-200 text-center">
+                    <p class="text-[10px] font-bold text-purple-600 uppercase">Jumlah Pemain Skuad</p>
+                    <p id="recap-stat-players" class="font-heading text-2xl font-bold text-purple-900">4</p>
+                </div>
+            </div>
+
+            <!-- Opsi Ekspor Spreadsheets -->
+            <div class="bg-slate-50 p-4 rounded-2xl border flex flex-wrap justify-between items-center gap-3">
+                <div class="flex items-center gap-2">
+                    <button onclick="exportRecapCSV()" class="btn-blox btn-blox-green text-xs px-3.5 py-2 rounded-xl font-bold flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-excel"></i> Download Excel / CSV
+                    </button>
+                    <button onclick="copyRecapTSV()" class="btn-blox btn-blox-blue text-xs px-3.5 py-2 rounded-xl font-bold flex items-center gap-1.5">
+                        <i class="fa-solid fa-copy"></i> Salin Tabel (TSV)
+                    </button>
+                </div>
+                <!-- Google Webhook Integration -->
+                <div class="flex items-center gap-2 max-w-md w-full">
+                    <input type="text" id="input-webhook-url" placeholder="URL Web App Google Apps Script (doPost)" class="text-xs p-2 bg-white border rounded-xl font-bold flex-1">
+                    <button onclick="saveWebhookURL()" class="btn-blox btn-blox-purple text-xs px-3 py-2 rounded-xl font-bold">Simpan</button>
+                    <button onclick="showAppsScriptGuide()" class="text-xs text-blue-600 font-bold underline">Kode Script</button>
+                </div>
+            </div>
+
+            <!-- Tabel Data Rekap Nilai -->
+            <div class="overflow-x-auto border rounded-2xl">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-100 text-slate-700 font-bold uppercase border-b">
+                        <tr>
+                            <th class="p-2.5">Waktu</th>
+                            <th class="p-2.5">Pemain</th>
+                            <th class="p-2.5">Gedung / Materi</th>
+                            <th class="p-2.5">Status</th>
+                            <th class="p-2.5">Poin</th>
+                            <th class="p-2.5">Jawaban Murid</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recap-table-body" class="divide-y text-slate-600">
+                        <!-- Table rows JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT UTAMA (ALL-IN-ONE) -->
+    <script>
+        /* ==========================================================================
+           1. GAME STATE & SOAL BANK INFORMATIKA KELAS VIII (BAB 2 - BERPIKIR KOMPUTASIONAL)
+           ========================================================================== */
+        let schoolName = "Informatika Kelas VIII";
+        let arenaTitle = "Kota Algoritma Edublox";
+        let webhookURL = localStorage.getItem("edublox_webhook_url") || "";
+
+        // Initial 4 Subject Buildings Data for Informatika VIII - Bab 2
+        let buildingsData = {
+            "A": {
+                code: "A",
+                title: "Fungsi",
+                icon: "🧠",
+                color: 0xec4899, // Rose/Pink
+                colorHex: "#ec4899",
+                pos: { x: -70, z: -70 },
+                questions: [
+                    {
+                        id: "A1_1",
+                        submateri: "A.1 Definisi Fungsi",
+                        q: "Dalam konsep berpikir komputasional, apakah yang dimaksud dengan fungsi?",
+                        options: [
+                            "A. Pemetaan yang menghubungkan setiap elemen domain tepat ke satu elemen kodomain",
+                            "B. Pengulangan instruksi secara terus-menerus tanpa batas",
+                            "C. Proses membagi masalah besar menjadi bagian-bagian yang tidak berhubungan",
+                            "D. Perangkat keras untuk mempercepat komputasi matematika"
+                        ],
+                        key: "A",
+                        explanation: "Fungsi dalam matematika dan komputasi adalah relasi khusus yang mengawankan setiap anggota himpunan asal (domain) tepat satu dengan anggota himpunan kawan (kodomain)."
+                    },
+                    {
+                        id: "A1_2",
+                        submateri: "A.1 Definisi Fungsi",
+                        q: "Himpunan daerah asal dalam suatu fungsi matematika dinamakan ...",
+                        options: ["A. Kodomain", "B. Domain", "C. Range", "D. Relasi"],
+                        key: "B",
+                        explanation: "Domain adalah himpunan daerah asal, sedangkan kodomain adalah daerah kawan, dan Range adalah daerah hasil pemetaan."
+                    },
+                    {
+                        id: "A2_1",
+                        submateri: "A.2 Fungsi dalam Matematika",
+                        q: "Jika fungsi f(x) = 2x + 3, maka hasil evaluasi fungsi untuk f(5) adalah ...",
+                        options: ["A. 10", "B. 13", "C. 15", "D. 8"],
+                        key: "B",
+                        explanation: "f(5) = 2(5) + 3 = 10 + 3 = 13."
+                    },
+                    {
+                        id: "A2_2",
+                        submateri: "A.2 Fungsi dalam Matematika",
+                        q: "Fungsi g(x) = x² - 4. Jika nilai x = 3, maka nilai dari g(3) adalah ...",
+                        options: ["A. 5", "B. 9", "C. 13", "D. 2"],
+                        key: "A",
+                        explanation: "g(3) = (3)² - 4 = 9 - 4 = 5."
+                    },
+                    {
+                        id: "A3_1",
+                        submateri: "A.3 Fungsi dalam Komputasi",
+                        q: "Manakah keuntungan utama dari penerapan fungsi (function / subroutine) dalam pemrograman komputer?",
+                        options: [
+                            "A. Membuat program menjadi lebih panjang dan rumit",
+                            "B. Kode dapat digunakan kembali (reusability) dan mempermudah modularisasi",
+                            "C. Menghilangkan kebutuhan memori dalam komputer",
+                            "D. Mempercepat koneksi internet pengguna"
+                        ],
+                        key: "B",
+                        explanation: "Fungsi memungkinkan pemrogram menulis blok kode satu kali dan memanggilnya berkali-kali (code reusability), serta membuat kode lebih modular dan mudah di-debug."
+                    },
+                    {
+                        id: "A3_2",
+                        submateri: "A.3 Fungsi dalam Komputasi",
+                        q: "Nilai yang dikirimkan ke dalam sebuah fungsi saat dipanggil dinamakan ...",
+                        options: ["A. Argumen / Parameter", "B. Output", "C. Variable Global", "D. Tipe Data"],
+                        key: "A",
+                        explanation: "Nilai masukan yang diserahkan ke fungsi diproses melalui parameter atau argumen fungsi."
+                    },
+                    {
+                        id: "A4_1",
+                        submateri: "A.4 Dekomposisi Fungsi",
+                        q: "Prinsip dekomposisi fungsi dalam berpikir komputasional dilakukan dengan cara ...",
+                        options: [
+                            "A. Menggabungkan semua kode program menjadi satu fungsi raksasa",
+                            "B. Memecah fungsi kompleks menjadi beberapa sub-fungsi yang lebih kecil dan fokus pada satu tugas spesifik",
+                            "C. Menghapus subprogram yang tidak terpakai secara acak",
+                            "D. Mengubah semua rumus matematika menjadi gambar"
+                        ],
+                        key: "B",
+                        explanation: "Dekomposisi fungsi berarti memecah proses yang besar dan rumit menjadi fungsi-fungsi modular yang lebih kecil, spesifik, dan mudah dikelola."
+                    }
+                ]
+            },
+            "B": {
+                code: "B",
+                title: "Konsep Himpunan Data Terstruktur",
+                icon: "📊",
+                color: 0xf59e0b, // Amber/Orange
+                colorHex: "#f59e0b",
+                pos: { x: 70, z: -70 },
+                questions: [
+                    {
+                        id: "B1_1",
+                        submateri: "B.1 Pengertian Himpunan",
+                        q: "Dalam ilmu matematika dan informatika, himpunan didefinisikan sebagai ...",
+                        options: [
+                            "A. Kumpulan objek atau elemen yang terdefinisi dengan jelas dan terukur",
+                            "B. Urutan data yang posisinya selalu berubah acak",
+                            "C. Angka-angka yang tidak memiliki hubungan satu sama lain",
+                            "D. Daftar instruksi logika percabangan"
+                        ],
+                        key: "A",
+                        explanation: "Himpunan adalah kumpulan objek-objek terdefinisi (well-defined) sehingga dapat ditentukan secara pasti apakah suatu elemen termasuk dalam himpunan tersebut."
+                    },
+                    {
+                        id: "B2_1",
+                        submateri: "B.2 Notasi Himpunan",
+                        q: "Simbol irisan (intersection) antara himpunan A dan himpunan B dilambangkan dengan ...",
+                        options: ["A. A ∪ B", "B. A ∩ B", "C. A ⊂ B", "D. A \ B"],
+                        key: "B",
+                        explanation: "Irisan melambangkan anggota yang sama-sama ada di A dan B (dilambangkan ∩), sedangkan gabungan melambangkan ∪."
+                    },
+                    {
+                        id: "B2_2",
+                        submateri: "B.2 Notasi Himpunan",
+                        q: "Jika A = {1, 2, 3, 4} dan B = {3, 4, 5, 6}, maka anggota dari A ∩ B adalah ...",
+                        options: ["A. {1, 2, 3, 4, 5, 6}", "B. {3, 4}", "C. {1, 2, 5, 6}", "D. { }"],
+                        key: "B",
+                        explanation: "Irisan (A ∩ B) terdiri dari elemen yang ada di kedua himpunan, yaitu 3 dan 4."
+                    },
+                    {
+                        id: "B3_1",
+                        submateri: "B.3 Himpunan Data Terstruktur",
+                        q: "Apakah yang dimaksud dengan data terstruktur?",
+                        options: [
+                            "A. Data acak berbentuk teks bebas tanpa format standar",
+                            "B. Data yang diorganisasikan dalam skema/format terdefinisi seperti tabel, array, atau objek",
+                            "C. Gambar dan rekaman suara yang belum diolah",
+                            "D. Berkas program kompilasi binary"
+                        ],
+                        key: "B",
+                        explanation: "Data terstruktur memiliki pola, baris, dan kolom yang jelas sehingga mudah dicari, diindeks, dan diproses oleh algoritma."
+                    },
+                    {
+                        id: "B4_1",
+                        submateri: "B.4 Memecahkan Masalah Logika",
+                        q: "Diketahui 20 siswa menyukai Pemrograman, 15 siswa menyukai Robotik, dan 8 siswa menyukai keduanya. Berapakah total siswa yang menyukai minimal salah satu bidang tersebut?",
+                        options: ["A. 35 siswa", "B. 27 siswa", "C. 43 siswa", "D. 12 siswa"],
+                        key: "B",
+                        explanation: "n(A ∪ B) = n(A) + n(B) - n(A ∩ B) = 20 + 15 - 8 = 27 siswa."
+                    }
+                ]
+            },
+            "C": {
+                code: "C",
+                title: "Sistem Bilangan",
+                icon: "🔢",
+                color: 0x10b981, // Emerald/Green
+                colorHex: "#10b981",
+                pos: { x: 70, z: 70 },
+                questions: [
+                    {
+                        id: "C1_1",
+                        submateri: "C.1 Pengertian Sistem Bilangan",
+                        q: "Sistem bilangan berbasis 2 yang menjadi bahasa dasar komputer (hanya terdiri dari angka 0 dan 1) disebut ...",
+                        options: ["A. Sistem Desimal", "B. Sistem Biner", "C. Sistem Oktal", "D. Sistem Heksadesimal"],
+                        key: "B",
+                        explanation: "Sistem biner (base-2) menggunakan simbol digit 0 dan 1 untuk merepresentasikan data komputer."
+                    },
+                    {
+                        id: "C2_1",
+                        submateri: "C.2 Jenis Sistem Bilangan",
+                        q: "Sistem bilangan Heksadesimal menggunakan basis ... dan simbol angka serta huruf dari ...",
+                        options: [
+                            "A. Basis 8 (0 sampai 7)",
+                            "B. Basis 10 (0 sampai 9)",
+                            "C. Basis 16 (0-9 dan A-F)",
+                            "D. Basis 2 (0 dan 1)"
+                        ],
+                        key: "C",
+                        explanation: "Heksadesimal menggunakan basis 16, dengan kombinasi angka 0-9 dan huruf A-F (di mana A=10, B=11, C=12, D=13, E=14, F=15)."
+                    },
+                    {
+                        id: "C3_1",
+                        submateri: "C.3 Konsep Aritmetika Modulo",
+                        q: "Hasil dari operasi matematika 17 mod 5 (17 modulo 5) adalah ...",
+                        options: ["A. 3", "B. 2", "C. 5", "D. 1"],
+                        key: "B",
+                        explanation: "17 dibagi 5 menghasilkan 3 dengan sisa 2. Operasi modulo mencari nilai sisa pembagian tersebut (sisa = 2)."
+                    },
+                    {
+                        id: "C3_2",
+                        submateri: "C.3 Konsep Aritmetika Modulo",
+                        q: "Berapakah hasil dari 24 mod 7?",
+                        options: ["A. 3", "B. 4", "C. 2", "D. 5"],
+                        key: "A",
+                        explanation: "24 ÷ 7 = 3 (sisa 3), karena 7 x 3 = 21, dan 24 - 21 = 3."
+                    },
+                    {
+                        id: "C4_1",
+                        submateri: "C.4 Konversi Sistem Bilangan",
+                        q: "Nilai bilangan biner 1101₂ jika dikonversikan ke dalam bilangan desimal adalah ...",
+                        options: ["A. 11", "B. 13", "C. 15", "D. 9"],
+                        key: "B",
+                        explanation: "(1 x 2³) + (1 x 2²) + (0 x 2¹) + (1 x 2⁰) = 8 + 4 + 0 + 1 = 13."
+                    },
+                    {
+                        id: "C4_2",
+                        submateri: "C.4 Konversi Sistem Bilangan",
+                        q: "Konversikan bilangan desimal 10₁₀ ke dalam sistem bilangan biner!",
+                        options: ["A. 1010₂", "B. 1100₂", "C. 1001₂", "D. 0101₂"],
+                        key: "A",
+                        explanation: "10 ÷ 2 = 5 sisa 0; 5 ÷ 2 = 2 sisa 1; 2 ÷ 2 = 1 sisa 0; 1 ÷ 2 = 0 sisa 1. Dibaca dari bawah: 1010₂."
+                    }
+                ]
+            },
+            "D": {
+                code: "D",
+                title: "Struktur Data Stack",
+                icon: "📚",
+                color: 0x8b5cf6, // Purple/Violet
+                colorHex: "#8b5cf6",
+                pos: { x: -70, z: 70 },
+                questions: [
+                    {
+                        id: "D1_1",
+                        submateri: "D.1 Pengertian Stack",
+                        q: "Prinsip utama kerja struktur data Stack (Tumpukan) adalah LIFO, yang merupakan singkatan dari ...",
+                        options: [
+                            "A. Last In, First Out",
+                            "B. Long In, Fast Out",
+                            "C. Logical Input, Fast Output",
+                            "D. List In, Final Out"
+                        ],
+                        key: "A",
+                        explanation: "LIFO (Last In, First Out) berarti elemen yang terakhir dimasukkan ke dalam tumpukan akan menjadi elemen pertama yang dikeluarkan."
+                    },
+                    {
+                        id: "D1_2",
+                        submateri: "D.1 Pengertian Stack",
+                        q: "Operasi untuk menambahkan elemen baru ke bagian paling atas tumpukan (stack) dinamakan ...",
+                        options: ["A. Pop", "B. Push", "C. Peek", "D. Clear"],
+                        key: "B",
+                        explanation: "Push digunakan untuk menambah elemen ke atas stack, sedangkan Pop digunakan untuk mengambil/menghapus elemen paling atas."
+                    },
+                    {
+                        id: "D1_3",
+                        submateri: "D.1 Pengertian Stack",
+                        q: "Operasi untuk mengambil atau menghapus elemen paling atas dari sebuah stack dinamakan ...",
+                        options: ["A. Push", "B. Pop", "C. Top", "D. Enqueue"],
+                        key: "B",
+                        explanation: "Pop mengambil elemen teratas dari stack sesuai prinsip LIFO."
+                    },
+                    {
+                        id: "D2_1",
+                        submateri: "D.2 Penerapan Stack",
+                        q: "Manakah contoh aplikasi sehari-hari yang menggunakan prinsip kerja Stack?",
+                        options: [
+                            "A. Antrean pembeli tiket bioskop (Queue)",
+                            "B. Tombol Undo/Redo pada aplikasi penyunting teks",
+                            "C. Daftar putar lagu acak (Shuffle)",
+                            "D. Pengiriman pesan siaran (Broadcast)"
+                        ],
+                        key: "B",
+                        explanation: "Fitur Undo mengingat aksi terakhir yang dilakukan pengguna (Last In) untuk dibatalkan terlebih dahulu (First Out)."
+                    },
+                    {
+                        id: "D2_2",
+                        submateri: "D.2 Penerapan Stack",
+                        q: "Jika dimasukkan angka 5, 8, 3 secara berurutan ke dalam Stack dengan operasi PUSH, maka angka yang akan keluar pertama kali saat dilakukan POP adalah ...",
+                        options: ["A. 5", "B. 8", "C. 3", "D. Tidak ada"],
+                        key: "C",
+                        explanation: "Urutan PUSH: 5 → 8 → 3. Elemen 3 ada di posisi paling atas (top), maka POP akan mengambil 3 terlebih dahulu."
+                    }
+                ]
+            }
+        };
+
+        // Players Squad Config (Started default with 1 player solo P1)
+        let players = [
+            { id: 0, name: "Pemain 1", color: 0xef4444, colorHex: "#ef4444", avatar: "raja", score: 0, coins: 50, pos: { x: 0, z: 10 }, rot: 0, auto: false }
+        ];
+
+        let avatarOptions = [
+            { id: "raja", name: "Raja Blox Ceria (Mahkota Emas)", emoji: "👑" },
+            { id: "neko", name: "Neko Kucing Pink (Telinga Kucing)", emoji: "🐱" },
+            { id: "kapten", name: "Kapten Bintang (Antena Luar Angkasa)", emoji: "🚀" },
+            { id: "kesatria", name: "Kesatria Zamrud (Topi Merah)", emoji: "🛡️" },
+            { id: "penyihir", name: "Penyihir Pelangi (Topi Kerucut)", emoji: "🧙" },
+            { id: "noob", name: "Noob Roblox Klasik", emoji: "🟩" }
+        ];
+
+        let recapData = [];
+        let placementMode = "CLICK";
+        let isAutoOrbit = false;
+        let isSplitScreen = false;
+        let cameraFocusMode = "ALL"; // ALL, 0, 1, 2, 3
+        let currentQuizBuilding = null;
+        let currentQuizIndex = 0;
+        let quizAnswersState = {};
+        let activeShuffledQuestions = [];
+
+        /* ==========================================================================
+           UTILITY FUNCTIONS: QUESTION & OPTION SHUFFLING
+           ========================================================================== */
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function prepareShuffledQuestions(buildingCode) {
+            const originalQuestions = buildingsData[buildingCode]?.questions || [];
+            activeShuffledQuestions = originalQuestions.map(q => {
+                // Parse options
+                const parsedOpts = q.options.map(opt => {
+                    const prefix = opt.charAt(0);
+                    const text = opt.substring(3).trim();
+                    return { originalKey: prefix, text: text };
+                });
+
+                // Shuffle options
+                const shuffledOpts = shuffleArray(parsedOpts);
+                const keys = ["A", "B", "C", "D"];
+                let newKey = "A";
+
+                const finalOptions = shuffledOpts.map((optObj, idx) => {
+                    const assignedKey = keys[idx];
+                    if (optObj.originalKey === q.key) {
+                        newKey = assignedKey;
+                    }
+                    return `${assignedKey}. ${optObj.text}`;
+                });
+
+                return {
+                    id: q.id,
+                    submateri: q.submateri,
+                    q: q.q,
+                    options: finalOptions,
+                    key: newKey,
+                    explanation: q.explanation
+                };
+            });
+            activeShuffledQuestions = shuffleArray(activeShuffledQuestions);
+        }
+
+        /* ==========================================================================
+           2. THREE.JS 3D WORLD CREATION (ISLAND, BUILDINGS, TREES, ORNAMENTS)
+           ========================================================================== */
+        let scene, camera, renderer, raycaster, mouse;
+        let playerMeshes = [];
+        let buildingMeshes = {};
+        let ornamentMeshes = [];
+        let cameraAngle = Math.PI / 4;
+        let cameraDistance = 110;
+        let cameraHeight = 75;
+
+        function init3DWorld() {
+            const container = document.getElementById("game-container");
+            const canvas = document.getElementById("three-canvas");
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x87ceeb); // Bright Sky Blue
+            scene.fog = new THREE.FogExp2(0x87ceeb, 0.002);
+
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
+            updateCameraPosition();
+
+            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            scene.add(ambientLight);
+
+            const sunLight = new THREE.DirectionalLight(0xfffaed, 0.9);
+            sunLight.position.set(100, 150, 80);
+            sunLight.castShadow = true;
+            sunLight.shadow.mapSize.width = 2048;
+            sunLight.shadow.mapSize.height = 2048;
+            scene.add(sunLight);
+
+            // Ground 260x260 Roblox Studs Island
+            createGroundIsland();
+
+            // Static Clouds & Dynamic Sun
+            createCloudsAndSun();
+
+            // Center Plaza Monument "Edublox City By Sitty"
+            createCenterMonument();
+
+            // Build Initial 4 Subject Buildings
+            buildSubjectBuildings();
+
+            // Environmental Trees & Flower Gardens
+            createEnvironmentFlora();
+
+            // Create Player 3D Character Meshes
+            rebuildPlayer3DMeshes();
+
+            // Event Listeners
+            window.addEventListener('resize', onWindowResize);
+            canvas.addEventListener('pointerdown', onCanvasClick);
+
+            // Start Render Loop
+            animate();
+        }
+
+        // 260x260 Ground Island with Studs texture effect
+        function createGroundIsland() {
+            const islandGeo = new THREE.BoxGeometry(260, 8, 260);
+            const islandMat = new THREE.MeshLambertMaterial({ color: 0x4ade80 }); // Grass Green
+            const island = new THREE.Mesh(islandGeo, islandMat);
+            island.position.y = -4;
+            island.receiveShadow = true;
+            scene.add(island);
+
+            // Roads Yellow Paths
+            const roadMat = new THREE.MeshLambertMaterial({ color: 0xfef08a }); // Light Yellow Road
+            const roadH = new THREE.Mesh(new THREE.PlaneGeometry(240, 24), roadMat);
+            roadH.rotation.x = -Math.PI / 2;
+            roadH.position.y = 0.05;
+            scene.add(roadH);
+
+            const roadV = new THREE.Mesh(new THREE.PlaneGeometry(24, 240), roadMat);
+            roadV.rotation.x = -Math.PI / 2;
+            roadV.position.y = 0.05;
+            scene.add(roadV);
+
+            // Plaza Circle Center
+            const plazaMat = new THREE.MeshLambertMaterial({ color: 0xe2e8f0 });
+            const plaza = new THREE.Mesh(new THREE.CylinderGeometry(28, 28, 0.2, 32), plazaMat);
+            plaza.position.y = 0.1;
+            scene.add(plaza);
+        }
+
+        // Center Rotating Crystal Monument with Floating Title Label
+        let crystalMonument;
+        function createCenterMonument() {
+            const monumentGroup = new THREE.Group();
+            monumentGroup.position.set(0, 0, 0);
+
+            const baseGeo = new THREE.CylinderGeometry(8, 10, 4, 8);
+            const baseMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.3 });
+            const base = new THREE.Mesh(baseGeo, baseMat);
+            base.position.y = 2;
+            monumentGroup.add(base);
+
+            // Crystal Octahedron
+            const crystalGeo = new THREE.OctahedronGeometry(5, 0);
+            const crystalMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.8, roughness: 0.1, emissive: 0x78350f });
+            crystalMonument = new THREE.Mesh(crystalGeo, crystalMat);
+            crystalMonument.position.y = 10;
+            monumentGroup.add(crystalMonument);
+
+            // 3D Billboard Label
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#f59e0b';
+            ctx.fillRect(0, 0, 512, 128);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 36px Fredoka, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Edublox City By Sitty', 256, 50);
+            ctx.font = '22px Nunito, sans-serif';
+            ctx.fillText('Informatika Kelas VIII • Kota Algoritma', 256, 95);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const spriteMat = new THREE.SpriteMaterial({ map: texture });
+            const sprite = new THREE.Sprite(spriteMat);
+            sprite.scale.set(30, 7.5, 1);
+            sprite.position.y = 19;
+            monumentGroup.add(sprite);
+
+            scene.add(monumentGroup);
+        }
+
+        // Floating Static Clouds
+        let cloudsGroup = new THREE.Group();
+        function createCloudsAndSun() {
+            for (let i = 0; i < 12; i++) {
+                const cloud = new THREE.Group();
+                const cloudMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9 });
+                for (let j = 0; j < 5; j++) {
+                    const part = new THREE.Mesh(new THREE.BoxGeometry(10 + Math.random()*8, 6 + Math.random()*4, 10 + Math.random()*8), cloudMat);
+                    part.position.set(j * 6 - 12, Math.random() * 2, Math.random() * 6);
+                    cloud.add(part);
+                }
+                cloud.position.set((Math.random() - 0.5) * 240, 55 + Math.random() * 20, (Math.random() - 0.5) * 240);
+                cloudsGroup.add(cloud);
+            }
+            scene.add(cloudsGroup);
+        }
+
+        // Subject Buildings Generation with Overhead 3D Billboards
+        function buildSubjectBuildings() {
+            // Remove old meshes
+            Object.values(buildingMeshes).forEach(b => scene.remove(b));
+            buildingMeshes = {};
+
+            Object.keys(buildingsData).forEach(code => {
+                const bData = buildingsData[code];
+                const bGroup = new THREE.Group();
+                bGroup.position.set(bData.pos.x, 0, bData.pos.z);
+
+                // Main Block Structure
+                const mainGeo = new THREE.BoxGeometry(32, 22, 32);
+                const mainMat = new THREE.MeshStandardMaterial({ color: bData.color, roughness: 0.4 });
+                const mainMesh = new THREE.Mesh(mainGeo, mainMat);
+                mainMesh.position.y = 11;
+                mainMesh.castShadow = true;
+                mainMesh.receiveShadow = true;
+                bGroup.add(mainMesh);
+
+                // Roof Accent
+                const roofGeo = new THREE.BoxGeometry(34, 4, 34);
+                const roofMat = new THREE.MeshStandardMaterial({ color: 0x1e293b });
+                const roof = new THREE.Mesh(roofGeo, roofMat);
+                roof.position.y = 24;
+                bGroup.add(roof);
+
+                // Entrance Door Accent
+                const doorGeo = new THREE.BoxGeometry(8, 12, 2);
+                const doorMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc });
+                const door = new THREE.Mesh(doorGeo, doorMat);
+                door.position.set(0, 6, 16.5);
+                bGroup.add(door);
+
+                // 3D Billboard Sign atop Building
+                const canvas = document.createElement('canvas');
+                canvas.width = 512;
+                canvas.height = 256;
+                const ctx = canvas.getContext('2d');
+
+                // Canvas styling
+                ctx.fillStyle = bData.colorHex;
+                ctx.fillRect(0, 0, 512, 256);
+                ctx.lineWidth = 12;
+                ctx.strokeStyle = '#ffffff';
+                ctx.strokeRect(6, 6, 500, 244);
+
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 64px Fredoka, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(`${bData.icon} GEDUNG ${bData.code}`, 256, 90);
+
+                ctx.font = 'bold 28px Nunito, sans-serif';
+                ctx.fillText(bData.title, 256, 160);
+                ctx.font = '22px Nunito, sans-serif';
+                ctx.fillText("Informatika Kelas VIII", 256, 205);
+
+                const texture = new THREE.CanvasTexture(canvas);
+                const spriteMat = new THREE.SpriteMaterial({ map: texture });
+                const sprite = new THREE.Sprite(spriteMat);
+                sprite.scale.set(28, 14, 1);
+                sprite.position.y = 35;
+                bGroup.add(sprite);
+
+                scene.add(bGroup);
+                buildingMeshes[code] = bGroup;
+            });
+        }
+
+        // Flora & Environment (Oak, Pine, Sakura Trees & Flower Beds)
+        function createEnvironmentFlora() {
+            const treePositions = [
+                { x: -35, z: -35, type: 'oak' }, { x: 35, z: -35, type: 'pine' },
+                { x: -35, z: 35, type: 'sakura' }, { x: 35, z: 35, type: 'oak' },
+                { x: -110, z: -100, type: 'pine' }, { x: 110, z: -100, type: 'oak' },
+                { x: -110, z: 100, type: 'sakura' }, { x: 110, z: 100, type: 'pine' },
+                { x: 0, z: -40, type: 'sakura' }, { x: 0, z: 40, type: 'oak' },
+                { x: -40, z: 0, type: 'pine' }, { x: 40, z: 0, type: 'sakura' }
+            ];
+
+            treePositions.forEach(p => {
+                const tree = createBlockyTreeMesh(p.type);
+                tree.position.set(p.x, 0, p.z);
+                scene.add(tree);
+            });
+        }
+
+        function createBlockyTreeMesh(type) {
+            const group = new THREE.Group();
+            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x78350f });
+            const trunk = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.8, 10), trunkMat);
+            trunk.position.y = 5;
+            group.add(trunk);
+
+            let leafColor = 0x15803d; // Oak Green
+            if (type === 'pine') leafColor = 0x064e3b;
+            if (type === 'sakura') leafColor = 0xf472b6; // Pink
+
+            const leafMat = new THREE.MeshStandardMaterial({ color: leafColor, roughness: 0.6 });
+
+            if (type === 'pine') {
+                const cone = new THREE.Mesh(new THREE.ConeGeometry(6, 14, 4), leafMat);
+                cone.position.y = 15;
+                group.add(cone);
+            } else {
+                for(let i=0; i<3; i++) {
+                    const leaves = new THREE.Mesh(new THREE.BoxGeometry(8 - i*2, 5, 8 - i*2), leafMat);
+                    leaves.position.y = 11 + i*4;
+                    group.add(leaves);
+                }
+            }
+            return group;
+        }
+
+        /* ==========================================================================
+           3. MULTI-PLAYER ROBLOX CHARACTERS & 3D OVERHEAD NAME SPRITES
+           ========================================================================== */
+        function rebuildPlayer3DMeshes() {
+            playerMeshes.forEach(m => scene.remove(m));
+            playerMeshes = [];
+
+            players.forEach((p, idx) => {
+                const pGroup = new THREE.Group();
+                pGroup.position.set(p.pos.x, 0, p.pos.z);
+
+                // Blocky Torso
+                const torsoMat = new THREE.MeshStandardMaterial({ color: p.color });
+                const torso = new THREE.Mesh(new THREE.BoxGeometry(3, 4, 1.8), torsoMat);
+                torso.position.y = 3.5;
+                torso.castShadow = true;
+                pGroup.add(torso);
+
+                // Head
+                const headMat = new THREE.MeshStandardMaterial({ color: 0xfde047 }); // Yellow Head
+                const head = new THREE.Mesh(new THREE.BoxGeometry(2.4, 2.4, 2.4), headMat);
+                head.position.y = 6.7;
+                head.castShadow = true;
+                pGroup.add(head);
+
+                // Legs
+                const legMat = new THREE.MeshStandardMaterial({ color: 0x1e293b });
+                const legL = new THREE.Mesh(new THREE.BoxGeometry(1.3, 3.5, 1.6), legMat);
+                legL.position.set(-0.75, 1.75, 0);
+                pGroup.add(legL);
+
+                const legR = new THREE.Mesh(new THREE.BoxGeometry(1.3, 3.5, 1.6), legMat);
+                legR.position.set(0.75, 1.75, 0);
+                pGroup.add(legR);
+
+                // Accessory Hat based on selected Avatar
+                addHatAccessory(pGroup, p.avatar);
+
+                // 3D Overhead Name Sprite
+                const sprite = createPlayerOverheadSprite(p);
+                sprite.position.y = 10.5;
+                pGroup.add(sprite);
+
+                scene.add(pGroup);
+                playerMeshes.push(pGroup);
+            });
+
+            renderPlayerDocks();
+            renderOverheadHTMLTags();
+        }
+
+        function addHatAccessory(parentGroup, avatarType) {
+            if (avatarType === 'raja') {
+                const crown = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.2, 1, 6), new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.8 }));
+                crown.position.y = 8.3;
+                parentGroup.add(crown);
+            } else if (avatarType === 'neko') {
+                const earL = new THREE.Mesh(new THREE.ConeGeometry(0.5, 1, 4), new THREE.MeshStandardMaterial({ color: 0xec4899 }));
+                earL.position.set(-0.8, 8.3, 0);
+                parentGroup.add(earL);
+                const earR = earL.clone();
+                earR.position.set(0.8, 8.3, 0);
+                parentGroup.add(earR);
+            } else if (avatarType === 'penyihir') {
+                const hat = new THREE.Mesh(new THREE.ConeGeometry(1.5, 3.5, 8), new THREE.MeshStandardMaterial({ color: 0x8b5cf6 }));
+                hat.position.y = 9.2;
+                parentGroup.add(hat);
+            } else if (avatarType === 'kesatria') {
+                const cap = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.6, 2.6), new THREE.MeshStandardMaterial({ color: 0xef4444 }));
+                cap.position.y = 8.1;
+                parentGroup.add(cap);
+            }
+        }
+
+        // Generate Sprite Texture for Overhead 3D Label
+        function createPlayerOverheadSprite(player) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 96;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = player.colorHex;
+            ctx.beginPath();
+            ctx.roundRect(10, 10, 236, 76, 16);
+            ctx.fill();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 28px Fredoka, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(player.name, 128, 55);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const spriteMat = new THREE.SpriteMaterial({ map: texture });
+            const sprite = new THREE.Sprite(spriteMat);
+            sprite.scale.set(12, 4.5, 1);
+            return sprite;
+        }
+
+        /* ==========================================================================
+           4. CONTROLS, CAMERA 360, & REALTIME ANIMATION LOOP
+           ========================================================================== */
+        const keysPressed = {};
+        window.addEventListener('keydown', (e) => {
+            keysPressed[e.key] = true;
+            if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'ArrowDown') e.preventDefault();
+        });
+        window.addEventListener('keyup', (e) => { keysPressed[e.key] = false; });
+
+        function updateCameraPosition() {
+            if (cameraFocusMode === 'ALL') {
+                let avgX = 0, avgZ = 0;
+                players.forEach(p => { avgX += p.pos.x; avgZ += p.pos.z; });
+                avgX /= players.length;
+                avgZ /= players.length;
+
+                camera.position.x = avgX + Math.sin(cameraAngle) * cameraDistance;
+                camera.position.z = avgZ + Math.cos(cameraAngle) * cameraDistance;
+                camera.position.y = cameraHeight;
+                camera.lookAt(avgX, 0, avgZ);
+            } else if (typeof cameraFocusMode === 'number' && players[cameraFocusMode]) {
+                const p = players[cameraFocusMode];
+                camera.position.x = p.pos.x + Math.sin(cameraAngle) * 50;
+                camera.position.z = p.pos.z + Math.cos(cameraAngle) * 50;
+                camera.position.y = 35;
+                camera.lookAt(p.pos.x, 3, p.pos.z);
+            }
+        }
+
+        function rotateCamera(delta) {
+            cameraAngle += delta;
+            updateCameraPosition();
+        }
+
+        function zoomCamera(delta) {
+            cameraDistance = Math.max(30, Math.min(180, cameraDistance + delta));
+            updateCameraPosition();
+        }
+
+        function toggleAutoOrbit() {
+            isAutoOrbit = !isAutoOrbit;
+            document.getElementById("btn-auto-orbit").classList.toggle("bg-amber-200", isAutoOrbit);
+        }
+
+        function setCameraFocus(mode) {
+            cameraFocusMode = mode;
+            updateCameraPosition();
+        }
+
+        // Animation Loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // 360 Auto Orbit
+            if (isAutoOrbit) {
+                cameraAngle += 0.005;
+                updateCameraPosition();
+            }
+
+            // Rotate Center Crystal Monument
+            if (crystalMonument) {
+                crystalMonument.rotation.y += 0.02;
+            }
+
+            // Movement Logic for Players
+            updatePlayersMovement();
+
+            // Check Building Proximity for Quiz Triggering
+            checkBuildingProximity();
+
+            // Sync Overhead HTML Labels Position
+            renderOverheadHTMLTags();
+
+            renderer.render(scene, camera);
+        }
+
+        function updatePlayersMovement() {
+            const speed = 0.8;
+
+            // Player 1 Keyboard Controls: W, A, S, D
+            if (players[0]) {
+                let dx = 0, dz = 0;
+                if (keysPressed['w'] || keysPressed['W']) dz -= speed;
+                if (keysPressed['s'] || keysPressed['S']) dz += speed;
+                if (keysPressed['a'] || keysPressed['A']) dx -= speed;
+                if (keysPressed['d'] || keysPressed['D']) dx += speed;
+                if (keysPressed[' ']) { playSoundSFX('jump'); }
+                movePlayerMesh(0, dx, dz);
+            }
+
+            // Player 2 Keyboard Controls: Arrow Keys
+            if (players[1]) {
+                let dx = 0, dz = 0;
+                if (keysPressed['ArrowUp']) dz -= speed;
+                if (keysPressed['ArrowDown']) dz += speed;
+                if (keysPressed['ArrowLeft']) dx -= speed;
+                if (keysPressed['ArrowRight']) dx += speed;
+                movePlayerMesh(1, dx, dz);
+            }
+
+            // Player 3 Keyboard Controls: I, J, K, L
+            if (players[2]) {
+                let dx = 0, dz = 0;
+                if (keysPressed['i'] || keysPressed['I']) dz -= speed;
+                if (keysPressed['k'] || keysPressed['K']) dz += speed;
+                if (keysPressed['j'] || keysPressed['J']) dx -= speed;
+                if (keysPressed['l'] || keysPressed['L']) dx += speed;
+                movePlayerMesh(2, dx, dz);
+            }
+
+            // Player 4 Keyboard Controls: T, F, G, H
+            if (players[3]) {
+                let dx = 0, dz = 0;
+                if (keysPressed['t'] || keysPressed['T']) dz -= speed;
+                if (keysPressed['g'] || keysPressed['G']) dz += speed;
+                if (keysPressed['f'] || keysPressed['F']) dx -= speed;
+                if (keysPressed['h'] || keysPressed['H']) dx += speed;
+                movePlayerMesh(3, dx, dz);
+            }
+
+            // Handle Auto Movement mode if toggled
+            players.forEach((p, idx) => {
+                if (p.auto) {
+                    const time = Date.now() * 0.001 + idx;
+                    movePlayerMesh(idx, Math.sin(time) * 0.5, Math.cos(time) * 0.5);
+                }
+            });
+
+            if (cameraFocusMode === 'ALL') updateCameraPosition();
+        }
+
+        function movePlayerMesh(pIdx, dx, dz) {
+            if (!playerMeshes[pIdx] || (dx === 0 && dz === 0)) return;
+
+            const p = players[pIdx];
+            const mesh = playerMeshes[pIdx];
+
+            // Constrain inside island 260x260 bounds (-120 to 120)
+            p.pos.x = Math.max(-120, Math.min(120, p.pos.x + dx));
+            p.pos.z = Math.max(-120, Math.min(120, p.pos.z + dz));
+
+            mesh.position.x = p.pos.x;
+            mesh.position.z = p.pos.z;
+            mesh.rotation.y = Math.atan2(dx, dz);
+        }
+
+        // Raycasting for Building Proximity
+        let lastQuizTriggerTime = 0;
+        function checkBuildingProximity() {
+            if (Date.now() - lastQuizTriggerTime < 3000) return;
+
+            Object.keys(buildingsData).forEach(code => {
+                const b = buildingsData[code];
+                players.forEach(p => {
+                    const dist = Math.hypot(p.pos.x - b.pos.x, p.pos.z - b.pos.z);
+                    if (dist < 22) {
+                        lastQuizTriggerTime = Date.now();
+                        openQuizModal(code);
+                    }
+                });
+            });
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        /* ==========================================================================
+           5. HUD UI & PLAYER DOCKS MANAGEMENT
+           ========================================================================== */
+        function renderPlayerDocks() {
+            const container = document.getElementById("player-docks-container");
+            container.innerHTML = "";
+
+            players.forEach((p, idx) => {
+                const card = document.createElement("div");
+                card.className = `bg-white/95 backdrop-blur-md p-2 rounded-2xl shadow-xl border-2 flex flex-col gap-1.5 text-xs`;
+                card.style.borderColor = p.colorHex;
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between gap-2 border-b pb-1">
+                        <span class="font-bold text-slate-800 flex items-center gap-1">
+                            <span class="w-2.5 h-2.5 rounded-full" style="background-color:${p.colorHex}"></span>
+                            ${p.name}
+                        </span>
+                        <span class="font-extrabold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-md"><i class="fa-solid fa-coins"></i> ${p.coins}</span>
+                    </div>
+                    <!-- Touch D-Pad -->
+                    <div class="grid grid-cols-3 gap-1 w-24 mx-auto text-center">
+                        <div></div>
+                        <button onpointerdown="startMove(${idx}, 0, -1)" onpointerup="stopMove(${idx})" class="bg-slate-100 hover:bg-slate-200 p-1.5 rounded-lg font-bold">▲</button>
+                        <div></div>
+                        <button onpointerdown="startMove(${idx}, -1, 0)" onpointerup="stopMove(${idx})" class="bg-slate-100 hover:bg-slate-200 p-1.5 rounded-lg font-bold">◀</button>
+                        <button onclick="jumpPlayer(${idx})" class="bg-amber-400 text-white p-1.5 rounded-lg font-bold">🦘</button>
+                        <button onpointerdown="startMove(${idx}, 1, 0)" onpointerup="stopMove(${idx})" class="bg-slate-100 hover:bg-slate-200 p-1.5 rounded-lg font-bold">▶</button>
+                        <div></div>
+                        <button onpointerdown="startMove(${idx}, 0, 1)" onpointerup="stopMove(${idx})" class="bg-slate-100 hover:bg-slate-200 p-1.5 rounded-lg font-bold">▼</button>
+                        <div></div>
+                    </div>
+                    <div class="flex justify-between items-center text-[10px] pt-1">
+                        <button onclick="togglePlayerAuto(${idx})" class="px-2 py-0.5 rounded bg-slate-100 font-bold text-slate-600">Auto: ${p.auto ? 'ON':'OFF'}</button>
+                        <button onclick="setCameraFocus(${idx})" class="text-blue-600 font-bold hover:underline">Focus</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        let touchMoveTimers = {};
+        function startMove(pIdx, dx, dz) {
+            stopMove(pIdx);
+            touchMoveTimers[pIdx] = setInterval(() => movePlayerMesh(pIdx, dx * 0.8, dz * 0.8), 30);
+        }
+        function stopMove(pIdx) {
+            if (touchMoveTimers[pIdx]) clearInterval(touchMoveTimers[pIdx]);
+        }
+        function jumpPlayer(pIdx) { playSoundSFX('jump'); }
+        function togglePlayerAuto(pIdx) {
+            players[pIdx].auto = !players[pIdx].auto;
+            renderPlayerDocks();
+        }
+
+        // Render HTML Overhead Tags aligned to 3D Space
+        function renderOverheadHTMLTags() {
+            const container = document.getElementById("overhead-tags-container");
+            container.innerHTML = "";
+
+            players.forEach((p, idx) => {
+                if (!playerMeshes[idx]) return;
+                const pos = playerMeshes[idx].position.clone();
+                pos.y += 11; // Above head
+
+                // Project 3D vector to Screen 2D
+                pos.project(camera);
+                const x = (pos.x * 0.5 + 0.5) * window.innerWidth;
+                const y = (-(pos.y * 0.5) + 0.5) * window.innerHeight;
+
+                if (pos.z < 1) { // Render only if in front of camera
+                    const tag = document.createElement("div");
+                    tag.className = "overhead-tag flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-extrabold text-white shadow-lg border-2 border-white";
+                    tag.style.left = `${x}px`;
+                    tag.style.top = `${y}px`;
+                    tag.style.backgroundColor = p.colorHex;
+
+                    const avatarObj = avatarOptions.find(a => a.id === p.avatar) || avatarOptions[0];
+                    tag.innerHTML = `<span>${avatarObj.emoji}</span> <span>P${idx+1}: ${p.name}</span>`;
+                    container.appendChild(tag);
+                }
+            });
+        }
+
+        function toggleSplitScreen() {
+            isSplitScreen = !isSplitScreen;
+            document.getElementById("split-screen-overlay").classList.toggle("hidden", !isSplitScreen);
+            document.getElementById("split-status-text").innerText = isSplitScreen ? "ON" : "OFF";
+        }
+
+        /* ==========================================================================
+           6. KUIS SERENTAK & VERIFIKASI JAWABAN MULTI-PEMAIN
+           ========================================================================== */
+        function openQuizModal(buildingCode) {
+            if (currentQuizBuilding !== buildingCode) {
+                currentQuizBuilding = buildingCode;
+                currentQuizIndex = 0;
+                quizAnswersState = {};
+                prepareShuffledQuestions(buildingCode);
+            }
+
+            const b = buildingsData[buildingCode];
+            if (!b || !activeShuffledQuestions.length) return;
+
+            document.getElementById("quiz-building-badge").innerText = b.icon;
+            document.getElementById("quiz-building-badge").style.backgroundColor = b.colorHex;
+            document.getElementById("quiz-building-name").innerText = `Gedung ${b.code} - ${b.title}`;
+            document.getElementById("quiz-total-idx").innerText = activeShuffledQuestions.length;
+
+            renderQuizQuestion();
+            document.getElementById("modal-quiz").classList.remove("hidden");
+        }
+
+        function closeQuizModal() {
+            document.getElementById("modal-quiz").classList.add("hidden");
+        }
+
+        function renderQuizQuestion() {
+            const b = buildingsData[currentQuizBuilding];
+            if (!b || !activeShuffledQuestions[currentQuizIndex]) return;
+
+            const q = activeShuffledQuestions[currentQuizIndex];
+            document.getElementById("quiz-current-idx").innerText = currentQuizIndex + 1;
+            document.getElementById("quiz-question-text").innerText = `[${q.submateri}] ${q.q}`;
+            document.getElementById("quiz-feedback-box").classList.add("hidden");
+
+            const container = document.getElementById("quiz-players-options");
+            container.innerHTML = "";
+
+            players.forEach((p, pIdx) => {
+                const card = document.createElement("div");
+                card.className = "bg-slate-50 p-4 rounded-2xl border-2 flex flex-col gap-2";
+                card.style.borderColor = p.colorHex;
+
+                let optionsHTML = q.options.map(opt => {
+                    const key = opt.charAt(0);
+                    const selected = quizAnswersState[pIdx] === key;
+                    const activeClass = selected ? 'bg-amber-400 text-white font-bold border-amber-600' : 'bg-white hover:bg-slate-100 text-slate-700';
+                    return `<button onclick="selectPlayerAnswer(${pIdx}, '${key}')" class="w-full text-left text-xs p-2.5 rounded-xl border font-semibold transition ${activeClass}">${opt}</button>`;
+                }).join("");
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-center border-b pb-2">
+                        <span class="font-bold text-xs flex items-center gap-1.5" style="color:${p.colorHex}">
+                            <i class="fa-solid fa-user"></i> P${pIdx+1}: ${p.name}
+                        </span>
+                        <span class="text-[11px] font-bold text-slate-500">Pilihan: ${quizAnswersState[pIdx] || '-'}</span>
+                    </div>
+                    <div class="space-y-1.5 mt-1">${optionsHTML}</div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function selectPlayerAnswer(pIdx, key) {
+            quizAnswersState[pIdx] = key;
+            playSoundSFX('click');
+            renderQuizQuestion();
+        }
+
+        function verifyAllPlayerAnswers(autoNext = false) {
+            const b = buildingsData[currentQuizBuilding];
+            const q = activeShuffledQuestions[currentQuizIndex];
+
+            let answeredCount = 0;
+            players.forEach((p, pIdx) => {
+                if (quizAnswersState[pIdx]) answeredCount++;
+            });
+
+            if (answeredCount === 0) return false;
+
+            document.getElementById("quiz-feedback-box").classList.remove("hidden");
+            document.getElementById("quiz-answer-key").innerText = `Kunci Jawaban: Pilihan ${q.key}`;
+            document.getElementById("quiz-explanation-text").innerText = q.explanation;
+
+            players.forEach((p, pIdx) => {
+                const userAns = quizAnswersState[pIdx];
+                if (!userAns) return;
+
+                const isCorrect = userAns === q.key;
+
+                if (isCorrect) {
+                    p.coins += 10;
+                    p.score += 100;
+                    playSoundSFX('correct');
+                } else {
+                    playSoundSFX('wrong');
+                }
+
+                recapData.unshift({
+                    time: new Date().toLocaleTimeString(),
+                    school: schoolName,
+                    player: p.name,
+                    building: `Gedung ${b.code}`,
+                    materi: b.title,
+                    question: q.q,
+                    userAns: userAns,
+                    key: q.key,
+                    status: isCorrect ? "BENAR" : "SALAH",
+                    points: isCorrect ? 100 : 0
+                });
+
+                if (webhookURL) postDataToWebhook(recapData[0]);
+            });
+
+            renderPlayerDocks();
+            return true;
+        }
+
+        function nextQuizQuestion() {
+            verifyAllPlayerAnswers(true);
+
+            if (currentQuizIndex < activeShuffledQuestions.length - 1) {
+                currentQuizIndex++;
+                quizAnswersState = {};
+                renderQuizQuestion();
+            } else {
+                alert("Kuis untuk gedung ini telah selesai! Hebat!");
+                closeQuizModal();
+            }
+        }
+
+        function prevQuizQuestion() {
+            if (currentQuizIndex > 0) {
+                currentQuizIndex--;
+                quizAnswersState = {};
+                renderQuizQuestion();
+            }
+        }
+
+        /* ==========================================================================
+           7. KANTIN JAJANAN & REST AREA
+           ========================================================================== */
+        const canteenItems = [
+            { name: "Es Teh Manis Blox", price: 10, xp: 20, emoji: "🥤" },
+            { name: "Bakso Kuah Panas", price: 20, xp: 50, emoji: "🍜" },
+            { name: "Burger Cheesy Blox", price: 25, xp: 60, emoji: "🍔" },
+            { name: "Pizza Keju Mozzarella", price: 30, xp: 80, emoji: "🍕" },
+            { name: "Es Krim Pelangi", price: 15, xp: 35, emoji: "🍦" },
+            { name: "Donat Cokelat Meseres", price: 12, xp: 25, emoji: "🍩" }
+        ];
+
+        function openCanteenModal() {
+            const container = document.getElementById("canteen-items-grid");
+            container.innerHTML = "";
+            canteenItems.forEach(item => {
+                const card = document.createElement("div");
+                card.className = "bg-pink-50 p-3 rounded-2xl border-2 border-pink-200 flex flex-col items-center text-center gap-1.5";
+                card.innerHTML = `
+                    <span class="text-4xl">${item.emoji}</span>
+                    <h4 class="font-bold text-xs text-slate-800">${item.name}</h4>
+                    <span class="text-[11px] font-extrabold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-md"><i class="fa-solid fa-coins"></i> ${item.price} Koin</span>
+                    <button onclick="buyCanteenItem('${item.name}', ${item.price})" class="btn-blox btn-blox-pink text-white text-xs px-3 py-1.5 rounded-xl font-bold mt-1 w-full">Beli Jajanan</button>
+                `;
+                container.appendChild(card);
+            });
+            document.getElementById("modal-canteen").classList.remove("hidden");
+        }
+
+        function closeCanteenModal() { document.getElementById("modal-canteen").classList.add("hidden"); }
+
+        function buyCanteenItem(name, price) {
+            if (players[0].coins >= price) {
+                players[0].coins -= price;
+                playSoundSFX('correct');
+                alert(`Selamat! ${players[0].name} berhasil membeli ${name}! Skuad mendapat energi tambahan!`);
+                renderPlayerDocks();
+                openCanteenModal();
+            } else {
+                alert("Koin tidak cukup! Kerjakan Kuis Serentak untuk mengumpulkan koin!");
+            }
+        }
+
+        /* ==========================================================================
+           8. BUILDER ORNAMEN 3D & GAZEBO LITERASI
+           ========================================================================== */
+        const ornamentCatalog = [
+            { id: "gazebo", name: "Gazebo Literasi", emoji: "⛩️" },
+            { id: "mading", name: "Papan Mading Info", emoji: "📋" },
+            { id: "oak_tree", name: "Pohong Rindang Asri", emoji: "🌳" },
+            { id: "sakura_tree", name: "Pohon Sakura Pink", emoji: "🌸" },
+            { id: "flower_bed", name: "Taman Bunga Pelangi", emoji: "🌷" },
+            { id: "bench", name: "Bangku Taman Santai", emoji: "🪑" },
+            { id: "picnic", name: "Meja Piknik & Payung", emoji: "☂️" },
+            { id: "robot", name: "Robot Maskot Blox", emoji: "🤖" },
+            { id: "cat_statue", name: "Monumen Kucing Oyen", emoji: "🐱" },
+            { id: "fountain", name: "Air Mancur Kota", emoji: "⛲" },
+            { id: "icecream_cart", name: "Gerobak Es Krim", emoji: "🍦" }
+        ];
+
+        function openBuilderModal() {
+            const container = document.getElementById("builder-catalog-grid");
+            container.innerHTML = "";
+            ornamentCatalog.forEach(orn => {
+                const card = document.createElement("div");
+                card.className = "bg-emerald-50 p-3 rounded-2xl border-2 border-emerald-200 flex flex-col items-center text-center gap-1.5";
+                card.innerHTML = `
+                    <span class="text-3xl">${orn.emoji}</span>
+                    <h4 class="font-bold text-xs text-slate-800">${orn.name}</h4>
+                    <button onclick="placeOrnament('${orn.id}')" class="btn-blox btn-blox-green text-white text-xs px-3 py-1.5 rounded-xl font-bold mt-1 w-full">Pasang Ornamen</button>
+                `;
+                container.appendChild(card);
+            });
+
+            document.querySelectorAll('input[name="build-mode"]').forEach(r => {
+                r.onchange = (e) => {
+                    placementMode = e.target.value;
+                    document.getElementById("build-zone-select").classList.toggle("hidden", placementMode !== 'ZONE');
+                    document.getElementById("build-coord-inputs").classList.toggle("hidden", placementMode !== 'COORD');
+                };
+            });
+
+            document.getElementById("modal-builder").classList.remove("hidden");
+        }
+
+        function closeBuilderModal() { document.getElementById("modal-builder").classList.add("hidden"); }
+
+        function placeOrnament(typeId) {
+            let x = 0, z = 0;
+            if (placementMode === 'ZONE') {
+                const zone = document.getElementById("select-zone").value;
+                if (zone === 'UTARA') { x = 0; z = -30; }
+                if (zone === 'SELATAN') { x = 0; z = 30; }
+                if (zone === 'TIMUR') { x = 30; z = 0; }
+                if (zone === 'BARAT') { x = -30; z = 0; }
+                if (zone === 'KARAKTER') { x = players[0].pos.x + 5; z = players[0].pos.z; }
+            } else if (placementMode === 'COORD') {
+                x = parseFloat(document.getElementById("input-coord-x").value) || 0;
+                z = parseFloat(document.getElementById("input-coord-z").value) || 0;
+            } else {
+                x = players[0].pos.x + 8;
+                z = players[0].pos.z + 8;
+            }
+
+            const mesh = createOrnament3DMesh(typeId);
+            mesh.position.set(x, 0, z);
+            scene.add(mesh);
+            ornamentMeshes.push(mesh);
+
+            playSoundSFX('correct');
+            alert(`Ornamen ${typeId} berhasil dipasang di posisi (${x}, ${z})!`);
+            closeBuilderModal();
+        }
+
+        function createOrnament3DMesh(typeId) {
+            const group = new THREE.Group();
+            const quote = document.getElementById("input-literacy-quote").value;
+
+            if (typeId === 'gazebo') {
+                const base = new THREE.Mesh(new THREE.CylinderGeometry(5, 5, 1, 8), new THREE.MeshStandardMaterial({ color: 0x78350f }));
+                base.position.y = 0.5;
+                group.add(base);
+
+                const roof = new THREE.Mesh(new THREE.ConeGeometry(6, 4, 8), new THREE.MeshStandardMaterial({ color: 0xb91c1c }));
+                roof.position.y = 7;
+                group.add(roof);
+
+                const sprite = createText3DSprite("Gazebo Literasi", quote, 0x10b981);
+                sprite.position.y = 10;
+                group.add(sprite);
+            } else if (typeId === 'mading') {
+                const board = new THREE.Mesh(new THREE.BoxGeometry(8, 5, 0.5), new THREE.MeshStandardMaterial({ color: 0xf59e0b }));
+                board.position.y = 5;
+                group.add(board);
+
+                const sprite = createText3DSprite("Mading Informatika", quote, 0x3b82f6);
+                sprite.position.y = 9;
+                group.add(sprite);
+            } else if (typeId === 'fountain') {
+                const pool = new THREE.Mesh(new THREE.CylinderGeometry(6, 6, 2, 16), new THREE.MeshStandardMaterial({ color: 0x0284c7 }));
+                pool.position.y = 1;
+                group.add(pool);
+            } else {
+                const box = new THREE.Mesh(new THREE.BoxGeometry(4, 4, 4), new THREE.MeshStandardMaterial({ color: 0xec4899 }));
+                box.position.y = 2;
+                group.add(box);
+            }
+            return group;
+        }
+
+        function createText3DSprite(title, desc, colorHex) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 160;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.roundRect(10, 10, 492, 140, 20);
+            ctx.fill();
+            ctx.lineWidth = 6;
+            ctx.strokeStyle = '#3b82f6';
+            ctx.stroke();
+
+            ctx.fillStyle = '#1e293b';
+            ctx.font = 'bold 30px Fredoka, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(title, 256, 50);
+
+            ctx.font = '20px Nunito, sans-serif';
+            ctx.fillText(desc.substring(0, 45), 256, 95);
+            ctx.fillText(desc.substring(45, 90), 256, 125);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const spriteMat = new THREE.SpriteMaterial({ map: texture });
+            const sprite = new THREE.Sprite(spriteMat);
+            sprite.scale.set(20, 6.25, 1);
+            return sprite;
+        }
+
+        function onCanvasClick(e) {
+            if (placementMode !== 'CLICK') return;
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(scene.children, true);
+
+            if (intersects.length > 0) {
+                const pt = intersects[0].point;
+                if (Math.abs(pt.x) < 120 && Math.abs(pt.z) < 120) {
+                    document.getElementById("input-coord-x").value = Math.round(pt.x);
+                    document.getElementById("input-coord-z").value = Math.round(pt.z);
+                }
+            }
+        }
+
+        /* ==========================================================================
+           9. PANEL GURU & AI GENERATOR SOAL (GEMINI API + FALLBACK)
+           ========================================================================== */
+        function openTeacherModal() {
+            renderTeacherBuildingsList();
+            document.getElementById("modal-teacher").classList.remove("hidden");
+        }
+
+        function closeTeacherModal() { document.getElementById("modal-teacher").classList.add("hidden"); }
+
+        function renderTeacherBuildingsList() {
+            const container = document.getElementById("teacher-buildings-list");
+            container.innerHTML = "";
+
+            Object.keys(buildingsData).forEach(code => {
+                const b = buildingsData[code];
+                const card = document.createElement("div");
+                card.className = "bg-slate-50 p-4 rounded-2xl border-2 space-y-3";
+                card.style.borderColor = b.colorHex;
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-center flex-wrap gap-2">
+                        <span class="font-heading font-bold text-base flex items-center gap-2 text-slate-800">
+                            ${b.icon} Gedung ${b.code} - ${b.title}
+                        </span>
+                        <div class="flex items-center gap-2 text-xs">
+                            <label class="font-bold text-slate-500">Warna Dinding:</label>
+                            <input type="color" value="${b.colorHex}" onchange="updateBuildingColor('${code}', this.value)" class="w-8 h-8 rounded-lg cursor-pointer border">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                        <input type="text" value="${b.title}" onchange="updateBuildingTitle('${code}', this.value)" class="p-2 bg-white border rounded-xl font-bold">
+                        <input type="text" value="${b.icon}" onchange="updateBuildingIcon('${code}', this.value)" class="p-2 bg-white border rounded-xl font-bold">
+                    </div>
+                    <div class="bg-white p-3 rounded-xl border space-y-2">
+                        <p class="font-bold text-xs text-slate-700">Daftar Pertanyaan Kuis (${b.questions.length} Soal):</p>
+                        ${b.questions.map((q, idx) => `
+                            <div class="text-xs p-2 bg-slate-50 rounded-lg border flex justify-between items-center">
+                                <span class="font-semibold text-slate-700 truncate max-w-md">${idx+1}. ${q.q}</span>
+                                <span class="font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">Kunci: ${q.key}</span>
+                            </div>
+                        `).join("")}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function updateBuildingColor(code, hex) {
+            buildingsData[code].colorHex = hex;
+            buildingsData[code].color = parseInt(hex.replace("#", "0x"));
+            buildSubjectBuildings();
+        }
+
+        function updateBuildingTitle(code, val) {
+            buildingsData[code].title = val;
+            buildSubjectBuildings();
+        }
+
+        function updateBuildingIcon(code, val) {
+            buildingsData[code].icon = val;
+            buildSubjectBuildings();
+        }
+
+        function addNewCustomBuilding() {
+            const nextLetter = String.fromCharCode(65 + Object.keys(buildingsData).length);
+            buildingsData[nextLetter] = {
+                code: nextLetter,
+                title: `Materi Informatika ${nextLetter}`,
+                icon: "💻",
+                color: 0x06b6d4, // Cyan
+                colorHex: "#06b6d4",
+                pos: { x: (Math.random() - 0.5) * 140, z: (Math.random() - 0.5) * 140 },
+                questions: [
+                    {
+                        id: `${nextLetter}_custom`,
+                        submateri: "Custom Material",
+                        q: "Pertanyaan default gedung baru algoritma ...",
+                        options: ["A. Pilihan A", "B. Pilihan B", "C. Pilihan C", "D. Pilihan D"],
+                        key: "A",
+                        explanation: "Pembahasan materi baru."
+                    }
+                ]
+            };
+            buildSubjectBuildings();
+            renderTeacherBuildingsList();
+        }
+
+        async function generateQuestionsWithAI() {
+            const btn = document.getElementById("btn-generate-ai");
+            const promptStr = document.getElementById("ai-prompt-input").value;
+            const targetBuilding = document.getElementById("ai-target-building").value;
+            const mode = document.querySelector('input[name="ai-mode"]:checked').value;
+
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> AI Sedang Membuat Soal...`;
+
+            const systemPrompt = `Anda adalah pakar pembuat soal Informatika SMP/MTs Kelas VIII berstandar Kurikulum Merdeka (Bab 2 Berpikir Komputasional).
+            Buatlah daftar 3 soal pilihan ganda bermutu tinggi dalam bahasa Indonesia tentang Fungsi, Himpunan Data Terstruktur, Sistem Bilangan, atau Stack.
+            Setiap soal harus memiliki 4 pilihan (A, B, C, D), kunci jawaban tunggal, dan pembahasan yang rinci.`;
+
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: promptStr }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "ARRAY",
+                        items: {
+                            type: "OBJECT",
+                            properties: {
+                                "submateri": { "type": "STRING" },
+                                "q": { "type": "STRING" },
+                                "options": { "type": "ARRAY", "items": { "type": "STRING" } },
+                                "key": { "type": "STRING" },
+                                "explanation": { "type": "STRING" }
+                            },
+                            "propertyOrdering": ["submateri", "q", "options", "key", "explanation"]
+                        }
+                    }
+                }
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                let generatedQuestions = [];
+
+                if (result.candidates && result.candidates[0]?.content?.parts[0]?.text) {
+                    generatedQuestions = JSON.parse(result.candidates[0].content.parts[0].text);
+                }
+
+                if (generatedQuestions.length > 0) {
+                    if (mode === 'replace') buildingsData[targetBuilding].questions = generatedQuestions;
+                    else buildingsData[targetBuilding].questions.push(...generatedQuestions);
+                    alert(`Berhasil! AI membuat ${generatedQuestions.length} soal baru untuk Gedung ${targetBuilding}!`);
+                } else {
+                    throw new Error("Response structure mismatch");
+                }
+            } catch (err) {
+                console.warn("AI API request failed/offline fallback triggered:", err);
+                const fallbackQ = [
+                    {
+                        id: "AI_FB_1",
+                        submateri: "Berpikir Komputasional",
+                        q: "[AI Fallback] Dalam struktur data Stack, manakah prinsip pengambilan elemen yang berlaku?",
+                        options: ["A. FIFO (First In First Out)", "B. LIFO (Last In First Out)", "C. Random Access", "D. Priority Order"],
+                        key: "B",
+                        explanation: "Stack menggunakan prinsip LIFO (Last In First Out)."
+                    }
+                ];
+                if (mode === 'replace') buildingsData[targetBuilding].questions = fallbackQ;
+                else buildingsData[targetBuilding].questions.push(...fallbackQ);
+                alert("Soal berhasil dibuat menggunakan generator fallback offline!");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-microchip"></i> Buat Soal Dengan AI Sekarang`;
+                renderTeacherBuildingsList();
+            }
+        }
+
+        /* ==========================================================================
+           10. REKAP NILAI MURID & SPREADSHEETS EXPORTING
+           ========================================================================== */
+        function openRecapModal() {
+            renderRecapTable();
+            document.getElementById("modal-recap").classList.remove("hidden");
+        }
+
+        function closeRecapModal() { document.getElementById("modal-recap").classList.add("hidden"); }
+
+        function renderRecapTable() {
+            const tbody = document.getElementById("recap-table-body");
+            tbody.innerHTML = "";
+
+            let total = recapData.length;
+            let correct = recapData.filter(r => r.status === "BENAR").length;
+            let accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+            document.getElementById("recap-stat-total").innerText = total;
+            document.getElementById("recap-stat-correct").innerText = correct;
+            document.getElementById("recap-stat-accuracy").innerText = `${accuracy}%`;
+            document.getElementById("recap-stat-players").innerText = players.length;
+
+            recapData.forEach(row => {
+                const tr = document.createElement("tr");
+                tr.className = "hover:bg-slate-50";
+                tr.innerHTML = `
+                    <td class="p-2.5 font-bold">${row.time}</td>
+                    <td class="p-2.5 font-bold text-slate-800">${row.player}</td>
+                    <td class="p-2.5">${row.building} - ${row.materi}</td>
+                    <td class="p-2.5 font-bold ${row.status === 'BENAR' ? 'text-emerald-600':'text-red-500'}">${row.status}</td>
+                    <td class="p-2.5 font-bold">${row.points}</td>
+                    <td class="p-2.5 text-slate-500 max-w-xs truncate">${row.userAns} (Kunci: ${row.key})</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function exportRecapCSV() {
+            if (recapData.length === 0) {
+                alert("Belum ada data aktivitas murid untuk diekspor!");
+                return;
+            }
+            let csvContent = "\uFEFFWaktu,Kelas,Pemain,Gedung,Materi,Pertanyaan,JawabanMurid,Kunci,Status,Poin\n";
+            recapData.forEach(r => {
+                csvContent += `"${r.time}","${r.school}","${r.player}","${r.building}","${r.materi}","${r.question.replace(/"/g, '""')}","${r.userAns}","${r.key}","${r.status}","${r.points}"\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `Rekap_Edublox_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function copyRecapTSV() {
+            let tsv = "Waktu\tKelas\tPemain\tGedung\tMateri\tStatus\tPoin\n";
+            recapData.forEach(r => {
+                tsv += `${r.time}\t${r.school}\t${r.player}\t${r.building}\t${r.materi}\t${r.status}\t${r.points}\n`;
+            });
+            navigator.clipboard.writeText(tsv).then(() => {
+                alert("Data rekap berhasil disalin dalam format TSV! Buka Google Sheets lalu tekan Ctrl+V.");
+            });
+        }
+
+        function saveWebhookURL() {
+            webhookURL = document.getElementById("input-webhook-url").value;
+            localStorage.setItem("edublox_webhook_url", webhookURL);
+            alert("URL Webhook Google Apps Script disimpan!");
+        }
+
+        function postDataToWebhook(dataRow) {
+            if (!webhookURL) return;
+            fetch(webhookURL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dataRow)
+            }).catch(e => console.log("Webhook sync error:", e));
+        }
+
+        function showAppsScriptGuide() {
+            const code = `function doPost(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var data = JSON.parse(e.postData.contents);
+  sheet.appendRow([new Date(), data.school, data.player, data.building, data.materi, data.question, data.userAns, data.key, data.status, data.points]);
+  return ContentService.createTextOutput("Success");
+}`;
+            navigator.clipboard.writeText(code);
+            alert("Kode Google Apps Script `doPost(e)` disalin ke clipboard! Tempelkan pada Extensions > Apps Script di Google Sheets Anda.");
+        }
+
+        /* ==========================================================================
+           11. MAIN MENU & INITIALIZATION
+           ========================================================================== */
+        function openMainMenu() {
+            renderPlayerSetupList();
+            document.getElementById("modal-main-menu").classList.remove("hidden");
+        }
+
+        function renderPlayerSetupList() {
+            const container = document.getElementById("player-setup-list");
+            container.innerHTML = "";
+
+            players.forEach((p, idx) => {
+                const card = document.createElement("div");
+                card.className = "bg-slate-50 p-3 rounded-2xl border flex flex-col gap-2 text-xs";
+                card.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-slate-700">Pemain #${idx+1}</span>
+                        <input type="color" value="${p.colorHex}" onchange="players[${idx}].colorHex=this.value; players[${idx}].color=parseInt(this.value.replace('#','0x'))" class="w-6 h-6 rounded cursor-pointer border">
+                    </div>
+                    <input type="text" value="${p.name}" onchange="players[${idx}].name=this.value" class="p-2 bg-white border rounded-xl font-bold">
+                    <select onchange="players[${idx}].avatar=this.value" class="p-2 bg-white border rounded-xl font-bold">
+                        ${avatarOptions.map(a => `<option value="${a.id}" ${p.avatar===a.id?'selected':''}>${a.emoji} ${a.name}</option>`).join("")}
+                    </select>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function addNewPlayerConfig() {
+            const newId = players.length;
+            players.push({
+                id: newId,
+                name: `Pemain ${newId+1}`,
+                color: 0x8b5cf6,
+                colorHex: "#8b5cf6",
+                avatar: "noob",
+                score: 0,
+                coins: 50,
+                pos: { x: (Math.random()-0.5)*20, z: (Math.random()-0.5)*20 },
+                rot: 0,
+                auto: false
+            });
+            renderPlayerSetupList();
+        }
+
+        function saveMenuConfigAndPlay() {
+            schoolName = document.getElementById("input-school-name").value || "Informatika Kelas VIII";
+            arenaTitle = document.getElementById("input-arena-title").value || "Kota Algoritma Edublox";
+
+            document.getElementById("hud-school-title").innerText = schoolName;
+            document.getElementById("modal-main-menu").classList.add("hidden");
+
+            initAudio();
+            rebuildPlayer3DMeshes();
+        }
+
+        // Initialize App on Window Load
+        window.onload = function() {
+            init3DWorld();
+            openMainMenu();
+        };
+    </script>
+</body>
+</html>

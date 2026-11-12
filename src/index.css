@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+@layer base {
+  * {
+    user-select: none;
+    -webkit-user-select: none;
+    font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6, .font-heading {
+    font-family: 'Fredoka', cursive, system-ui, sans-serif;
+  }
+}
+
+/* Custom 3D Blox Button Styling */
+.btn-blox {
+  transition: all 0.1s ease;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.25);
+  position: relative;
+  top: 0;
+  cursor: pointer;
+}
+
+.btn-blox:hover {
+  filter: brightness(1.05);
+}
+
+.btn-blox:active {
+  top: 3px;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
+}
+
+.btn-blox-red { background-color: #ef4444; border-bottom: 3px solid #b91c1c; color: white; }
+.btn-blox-green { background-color: #10b981; border-bottom: 3px solid #047857; color: white; }
+.btn-blox-blue { background-color: #3b82f6; border-bottom: 3px solid #1d4ed8; color: white; }
+.btn-blox-yellow { background-color: #f59e0b; border-bottom: 3px solid #b45309; color: white; }
+.btn-blox-purple { background-color: #8b5cf6; border-bottom: 3px solid #6d28d9; color: white; }
+.btn-blox-pink { background-color: #ec4899; border-bottom: 3px solid #be185d; color: white; }
+
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 8px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+

@@ -1,0 +1,6 @@
+{
+  "name": "Edublox City By Sitty - Informatika Kelas VIII",
+  "description": "Game edukasi 3D interaktif Berpikir Komputasional Informatika Kelas VIII. Menjelajahi Kota Algoritma, kuis serentak, builder gazebo literasi, kustomisasi guru, generator soal AI, rekap nilai spreadsheet, dan konfigurasi hosting domain publik.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
